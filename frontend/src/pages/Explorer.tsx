@@ -1,0 +1,17 @@
+import { useEffect, useState } from "react"; import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { api, CAT_COLOR, errMsg } from "../services/api"; import { Badge, Pill } from "../components/Common"; import { useAuth } from "../context/Auth";
+export default function Explorer() {
+  const [res, setRes] = useState<any>(null); const [q, setQ] = useState(""); const [district, setDistrict] = useState(""); const [page, setPage] = useState(1); const [sel, setSel] = useState<any>(null); const { user } = useAuth();
+  useEffect(() => { api.get("/api/borewells", { params: { q: q || undefined, district: district || undefined, page, size: 15 } }).then((r) => setRes(r.data)); }, [q, district, page]);
+  const open = async (id: number) => setSel((await api.get(`/api/borewells/${id}`)).data);
+  const dl = async (id: number, fmt: string) => { try { const r = await api.get(`/api/reports/borewell/${id}`, { params: { fmt }, responseType: "blob" }); const a = document.createElement("a"); a.href = URL.createObjectURL(r.data); a.download = `borewell-${id}.${fmt}`; a.click(); } catch (e) { alert(user ? errMsg(e) : "Sign in to download reports"); } };
+  return (<div className="space-y-3"><h1 className="text-2xl font-semibold">Borewell explorer</h1>
+    <div className="flex gap-2"><input className="input max-w-xs" placeholder="Search name / village / code" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} /><input className="input max-w-xs" placeholder="District" value={district} onChange={(e) => { setDistrict(e.target.value); setPage(1); }} /></div>
+    <div className="grid lg:grid-cols-2 gap-4"><div className="card overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-left text-slate-500"><th>Name</th><th>District</th><th>EC</th><th>Measured</th><th>Origin</th></tr></thead>
+      <tbody>{res?.items.map((b: any) => <tr key={b.id} className="border-t cursor-pointer hover:bg-slate-50" onClick={() => open(b.id)}><td className="py-1">{b.name}</td><td>{b.district}</td><td>{b.latest?.ec_us_cm ?? "—"}</td><td><Pill text={b.latest?.category} color={CAT_COLOR[b.latest?.category]} /></td><td><Badge origin={b.origin} /></td></tr>)}</tbody></table>
+      <div className="flex justify-between mt-2 text-sm"><button disabled={page === 1} onClick={() => setPage(page - 1)} className="btn">Prev</button><span>{res?.total ?? 0} borewells</span><button disabled={!res || page * 15 >= res.total} onClick={() => setPage(page + 1)} className="btn">Next</button></div></div>
+      {sel && <div className="card space-y-2"><div className="flex justify-between"><h2 className="font-semibold">{sel.name}</h2><Badge origin={sel.origin} /></div>
+        <div className="text-sm text-slate-600">{sel.village}, {sel.district} · depth {sel.depth_m ?? "—"} m · {sel.distance_to_coast_km} km from coast · status {sel.status}</div>
+        <div className="h-48"><ResponsiveContainer><LineChart data={sel.history}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="sampled_on" tick={{ fontSize: 10 }} /><YAxis /><Tooltip /><Line dataKey="ec_us_cm" name="EC µS/cm" stroke="#087EAD" /><Line dataKey="chloride_mg_l" name="Cl mg/L" stroke="#F97316" /></LineChart></ResponsiveContainer></div>
+        <div className="flex gap-2"><button className="btn" onClick={() => dl(sel.id, "pdf")}>PDF report</button><button className="btn" onClick={() => dl(sel.id, "csv")}>CSV</button></div></div>}</div></div>);
+}

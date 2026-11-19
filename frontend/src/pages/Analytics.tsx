@@ -1,0 +1,13 @@
+import { useState } from "react"; import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"; import { api } from "../services/api"; import { Note, useFetch } from "../components/Common";
+const D = ["Tiruvallur", "Chennai", "Chengalpattu", "Villupuram", "Cuddalore", "Mayiladuthurai", "Nagapattinam", "Thanjavur", "Tiruvarur", "Pudukkottai", "Ramanathapuram", "Thoothukudi", "Tirunelveli", "Kanniyakumari"];
+export default function Analytics() {
+  const [d, setD] = useState("Cuddalore"); const rv = useFetch(async () => (await api.get("/api/analytics/rainfall-vs-salinity", { params: { district: d } })).data, [d]);
+  const dt = useFetch(async () => (await api.get("/api/analytics/districts")).data); const src = useFetch(async () => (await api.get("/api/climate/rainfall", { params: { district: d } })).data, [d]); const r: any = rv.data;
+  return (<div className="space-y-4"><h1 className="text-2xl font-semibold">Climate &amp; historical analytics</h1><select className="input max-w-xs" value={d} onChange={(e) => setD(e.target.value)}>{D.map((x) => <option key={x}>{x}</option>)}</select>
+    <div className="card h-80"><h3 className="font-medium mb-2">Rainfall vs measured EC — {d}</h3>{r && r.series.length === 0 ? <div className="text-sm text-slate-500">No climate or water-quality data for this district yet.</div> :
+      <ResponsiveContainer><ComposedChart data={r?.series ?? []}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="period" tick={{ fontSize: 10 }} /><YAxis yAxisId="l" /><YAxis yAxisId="r" orientation="right" /><Tooltip /><Legend /><Bar yAxisId="l" dataKey="rainfall_mm" fill="#38BDF8" name="Rainfall mm" /><Line yAxisId="r" dataKey="avg_ec" stroke="#DC2626" name="Mean EC" connectNulls /></ComposedChart></ResponsiveContainer>}</div>
+    {r && <Note>{r.spearman_rho == null ? `Correlation needs ≥12 paired months (have ${r.paired_months}).` : `Spearman ρ = ${r.spearman_rho} over ${r.paired_months} months. Association is not causation.`}
+      {(src.data as any[])?.[0] && ` Climate source: ${(src.data as any[])[0].source} · ${(src.data as any[])[0].coverage} · ${(src.data as any[])[0].update_frequency}.`}</Note>}
+    <div className="card overflow-x-auto"><h3 className="font-medium mb-2">District comparison (verified data)</h3><table className="text-sm w-full"><thead><tr className="text-left text-slate-500"><th>District</th><th>Borewells</th><th>Avg EC</th><th>Avg TDS</th><th>Avg Cl</th></tr></thead>
+      <tbody>{(dt.data as any[] ?? []).map((x) => <tr key={x.district} className="border-t"><td>{x.district}</td><td>{x.borewells}</td><td>{x.avg_ec ?? "—"}</td><td>{x.avg_tds ?? "—"}</td><td>{x.avg_chloride ?? "—"}</td></tr>)}</tbody></table></div></div>);
+}

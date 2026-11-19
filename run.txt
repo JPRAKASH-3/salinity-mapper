@@ -1,0 +1,22 @@
+Database
+
+docker compose up -d db
+
+
+Backend
+
+cd backend
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env               # Windows: copy .env.example .env
+# edit .env and set SECRET_KEY to any long random string
+python -m scripts.seed_demo --admin-email you@example.com --admin-password "StrongPass123" --demo
+uvicorn app.main:app --reload
+
+
+Frontend
+
+cd frontend
+npm install
+npm run dev

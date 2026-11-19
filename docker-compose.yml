@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment: { POSTGRES_USER: salinity, POSTGRES_PASSWORD: salinity, POSTGRES_DB: salinity }
+    ports: ["5433:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+  backend:
+    build: ./backend
+    env_file: ./backend/.env.example
+    environment: { DATABASE_URL: "postgresql+psycopg2://salinity:salinity@db:5432/salinity", MODEL_DIR: /models }
+    volumes: ["./models:/models"]
+    depends_on: [db]
+    ports: ["8000:8000"]
+volumes: { pgdata: {} }
