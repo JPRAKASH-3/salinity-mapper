@@ -27,3 +27,4 @@ After seeding: sign in as admin → Admin → "Assess all borewells". Optional: 
 - Not yet built: Alembic migrations, SMS gateway, IoT ingestion, district/village PDF (CSV exists), user-management UI, Redis caching, e2e tests. IMD/ERA5/Copernicus need manual download/credentials → use `/api/climate/upload`.
 - Deploy: frontend → Vercel (`VITE_API_URL`=backend URL), backend → Render (start `uvicorn app.main:app --host 0.0.0.0 --port $PORT`), DB → managed Postgres with PostGIS (Supabase/Neon/Render).
 - Not executed end-to-end in the authoring sandbox (no network/DB): run the steps above and report issues.
+"# salinity-mapper" 
